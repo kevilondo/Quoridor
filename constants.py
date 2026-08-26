@@ -1,0 +1,6 @@
+MAX_WALLS = 10
+PLAYER_1 = "player 1"
+PLAYER_2 = "player 2"
+BOARD_SIZE = 9
+CELL_SIZE = 60
+MARGIN = 40
