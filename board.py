@@ -1,6 +1,7 @@
 import tkinter as tk
 from typing import TYPE_CHECKING
 from constants import MARGIN, CELL_SIZE, BOARD_SIZE
+from pathfinding import PathFinding
 
 if TYPE_CHECKING:
     from game import Game
@@ -94,7 +95,7 @@ class Board:
 
     def draw_wall(self, walls_built):
     # if row is the same, then it thickens the top border of both cells,
-    # if row is the same, then it thickens the right border of both cells
+    # if col is the same, then it thickens the right border of both cells
         for wall in walls_built:
             if wall[0][1] == wall[1][1]:
                 for cell in wall:
@@ -162,6 +163,14 @@ class Board:
                     self.game.possible_wall_placements = []
 
                     self.game.walls_built.append(self.game.cells_to_block)
+                    #illegal wall check
+                    pf = PathFinding()
+                    if not pf.is_exit_possible_for_player_1(self) or not pf.is_exit_possible_for_player_2(self):
+                        self.game.walls_built.pop()
+                        self.game.cells_to_block = []
+                        print("ILLEGAL WALL!!!!!")
+                        return
+
                     self.draw_wall([self.game.cells_to_block])
                     self.game.reduce_walls()
                     self.game.cells_to_block = []
