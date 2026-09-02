@@ -17,6 +17,7 @@ class Game:
     
         self.possible_moves_for_turn = []
 
+#Since we cannot draw a wall on the edge of the board, we need to sanitize the cells to block if they are on the edge of the board and block the next cell inwards instead
     def sanitize_cells_to_block(self):
         cells = []
 
