@@ -109,9 +109,10 @@ class Game:
             target_direction = (row, col + 1)
             better_cell = (row, col + 2)
 
-        if self.player2["pos"] == target_direction:
+        opponent = self.get_opponent()
+        if opponent["pos"] == target_direction:
             next_move = better_cell
-            if board.is_within_bounds(next_move):
+            if board.is_within_bounds(next_move) and not board.is_blocked_by_wall(opponent["pos"], next_move):
                 return next_move
             else:
                 return None
@@ -120,4 +121,22 @@ class Game:
             return None
 
         return target_direction
+
+    def switch_turn(self):
+        if self.turn == PLAYER_1:
+            self.turn = PLAYER_2
+        else:
+            self.turn = PLAYER_1
+
+    def get_player_by_turn(self):
+        if self.turn == PLAYER_1:
+            return self.player1
+        else:
+            return self.player2
+
+    def get_opponent(self):
+        if self.turn == PLAYER_1:
+            return self.player2
+        else:
+            return self.player1
     

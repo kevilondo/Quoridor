@@ -53,7 +53,9 @@ class Board:
         if self.game.possible_wall_placement_highlighted:
             return
 
-        if ((row, col) == self.game.player1["pos"]):
+        player = self.game.get_player_by_turn()
+
+        if ((row, col) == player["pos"]):
         
             if self.game.possible_moves_highlighted == True:
                 self.canvas.delete("possible_moves")
@@ -71,17 +73,21 @@ class Board:
 
     
         if self.game.possible_moves_highlighted == True and (row, col) in self.game.possible_moves_for_turn:
-            self.canvas.delete("pawn-"+self.game.player1["color"])
-            self.draw_pawn(row, col, self.game.player1["color"])
-            self.game.player1["pos"] = (row, col)
+            self.canvas.delete("pawn-"+player["color"])
+            self.draw_pawn(row, col, player["color"])
+            player["pos"] = (row, col)
             self.canvas.delete("possible_moves")
             self.game.possible_moves_for_turn = []
             self.game.possible_moves_highlighted = False
 
             if self.game.player1["pos"][0] == 0:
                 print("win!")
+                exit()
             elif self.game.player2["pos"][0] == BOARD_SIZE - 1:
                 print("player 2 win!")
+                exit()
+
+            self.game.switch_turn()
 
     def draw_possible_grids(self, possible_moves, tags="possible_moves"):
         for move in possible_moves:
@@ -174,6 +180,7 @@ class Board:
                     self.draw_wall([self.game.cells_to_block])
                     self.game.reduce_walls()
                     self.game.cells_to_block = []
+                    self.game.switch_turn()
 
                     return
 
@@ -193,26 +200,19 @@ class Board:
 
         for wall in self.game.walls_built:
             wall_point_a, wall_point_b = wall[0], wall[1]
-            wall_row_sum = wall_point_a[0] + wall_point_b[0]
-            ctb_row_sum = cells_to_block[0][0] + cells_to_block[1][0]
-            wall_col_sum = wall_point_a[1] + wall_point_b[1]
-            ctb_col_sum = cells_to_block[0][1] + cells_to_block[1][1]
             #this simply means that you can't have one wall cutting through another. like a + shaped block. but you can do a T shaped
 
             is_wall_vertical = self.is_position_vertical(wall)
             is_wall_horizontal = self.is_position_horizontal(wall)
 
-            is_position_incorrect = (is_wall_vertical and ctb_row_sum > wall_row_sum) or (is_wall_horizontal and ctb_col_sum <= wall_col_sum)
+            bottom_grid_of_the_wall = max(wall_point_a, wall_point_b)
+            bottom_grid_of_the_cells_to_block = max(cells_to_block[0], cells_to_block[1])
+            left_grid_of_the_wall = min(wall_point_a, wall_point_b)
+            left_grid_of_the_cells_to_block = min(cells_to_block[0], cells_to_block[1])
 
-            #check if new wall is extending the old one then reject it
-            is_ctb_vertical = cells_to_block[0][1] == cells_to_block[1][1]
-            is_ctb_horizontal = cells_to_block[0][0] == cells_to_block[1][0]
-            have_same_column = cells_to_block[0][1] == cells_to_block[1][1] == wall_point_a[1] == wall_point_b[1]
-            have_same_row = cells_to_block[0][0] == cells_to_block[1][0] == wall_point_a[0] == wall_point_b[0]
-            is_new_wall_extending = (is_ctb_vertical and have_same_column) or (is_ctb_horizontal and have_same_row)
-
-
-            if ((wall_point_a in cells_to_block or wall_point_b in cells_to_block) and (is_position_incorrect or is_new_wall_extending)):
+            #doesn't matter which wall was created first, horizontal or vertical, we just don't want this shape "+" and wall that extends an existing one like this ---
+            # print(is_wall_vertical, bottom_grid_of_the_wall, left_grid_of_the_wall)
+            if ((is_wall_vertical and bottom_grid_of_the_wall == left_grid_of_the_cells_to_block) or (is_wall_horizontal and bottom_grid_of_the_cells_to_block == left_grid_of_the_wall)):
                 result = True
 
         return result
