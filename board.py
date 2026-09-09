@@ -2,6 +2,7 @@ import tkinter as tk
 from typing import TYPE_CHECKING
 from constants import MARGIN, CELL_SIZE, BOARD_SIZE
 from pathfinding import PathFinding
+from ai import AI
 
 if TYPE_CHECKING:
     from game import Game
@@ -33,7 +34,7 @@ class Board:
                 self.canvas.create_rectangle(x0, y0, x1, y1, outline='gray', fill=fill_color)
 
         for player in [self.game.player1, self.game.player2]:
-            self.draw_pawn(player["pos"][0], player["pos"][1], player["color"])
+            self.draw_pawn(player.pos[0], player.pos[1], player.color)
 
         self.root.mainloop()
 
@@ -55,7 +56,7 @@ class Board:
 
         player = self.game.get_player_by_turn()
 
-        if ((row, col) == player["pos"]):
+        if ((row, col) == player.pos):
         
             if self.game.possible_moves_highlighted == True:
                 self.canvas.delete("possible_moves")
@@ -64,7 +65,7 @@ class Board:
 
                 return
             
-            self.game.possible_moves_for_turn = self.game.determine_next_possible_move(self, row, col)
+            self.game.possible_moves_for_turn = self.game.determine_next_possible_moves(self, row, col)
             self.draw_possible_grids(self.game.possible_moves_for_turn)
             self.game.possible_moves_highlighted = True
             self.game.possible_wall_placement_highlighted = False
@@ -73,21 +74,22 @@ class Board:
 
     
         if self.game.possible_moves_highlighted == True and (row, col) in self.game.possible_moves_for_turn:
-            self.canvas.delete("pawn-"+player["color"])
-            self.draw_pawn(row, col, player["color"])
-            player["pos"] = (row, col)
+            self.canvas.delete("pawn-"+player.color)
+            self.draw_pawn(row, col, player.color)
+            player.pos = (row, col)
             self.canvas.delete("possible_moves")
             self.game.possible_moves_for_turn = []
             self.game.possible_moves_highlighted = False
 
-            if self.game.player1["pos"][0] == 0:
+            if self.game.player1.pos[0] == 0:
                 print("win!")
                 exit()
-            elif self.game.player2["pos"][0] == BOARD_SIZE - 1:
+            elif self.game.player2.pos[0] == BOARD_SIZE - 1:
                 print("player 2 win!")
                 exit()
 
             self.game.switch_turn()
+            self.game.trigger_ai(self)
 
     def draw_possible_grids(self, possible_moves, tags="possible_moves"):
         for move in possible_moves:
@@ -145,7 +147,7 @@ class Board:
             print("YOU'RE OUT OF WALLS!")
             return
 
-        #clicked_cell_position != player_1["pos"] and clicked_cell_position != player_2["pos"]
+        #clicked_cell_position != player_1.pos and clicked_cell_position != player_2.pos
         if self.is_within_bounds(clicked_cell_position):
 
             if self.game.possible_wall_placement_highlighted == True:
@@ -181,6 +183,7 @@ class Board:
                     self.game.reduce_walls()
                     self.game.cells_to_block = []
                     self.game.switch_turn()
+                    self.game.trigger_ai(self)
 
                     return
 
@@ -200,19 +203,12 @@ class Board:
 
         for wall in self.game.walls_built:
             wall_point_a, wall_point_b = wall[0], wall[1]
+
             #this simply means that you can't have one wall cutting through another. like a + shaped block. but you can do a T shaped
-
-            is_wall_vertical = self.is_position_vertical(wall)
-            is_wall_horizontal = self.is_position_horizontal(wall)
-
-            bottom_grid_of_the_wall = max(wall_point_a, wall_point_b)
-            bottom_grid_of_the_cells_to_block = max(cells_to_block[0], cells_to_block[1])
-            left_grid_of_the_wall = min(wall_point_a, wall_point_b)
-            left_grid_of_the_cells_to_block = min(cells_to_block[0], cells_to_block[1])
-
             #doesn't matter which wall was created first, horizontal or vertical, we just don't want this shape "+" and wall that extends an existing one like this ---
-            # print(is_wall_vertical, bottom_grid_of_the_wall, left_grid_of_the_wall)
-            if ((is_wall_vertical and bottom_grid_of_the_wall == left_grid_of_the_cells_to_block) or (is_wall_horizontal and bottom_grid_of_the_cells_to_block == left_grid_of_the_wall)):
+
+            is_wall_extending_or_cutting = (max(wall_point_a, wall_point_b) == min(cells_to_block[0], cells_to_block[1])) or (min(wall_point_a, wall_point_b) == max(cells_to_block[0], cells_to_block[1]))
+            if is_wall_extending_or_cutting:
                 result = True
 
         return result

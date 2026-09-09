@@ -9,8 +9,8 @@ class PathFinding:
         visited = []
         cells_to_visit = []
 
-        cells_to_visit = game.determine_next_possible_move(board, player["pos"][0], player["pos"][1])
-        visited.append(player["pos"])
+        cells_to_visit = game.determine_next_possible_moves(board, player.pos[0], player.pos[1])
+        visited.append(player.pos)
 
         while cells_to_visit.__len__() > 0:
             cell = cells_to_visit[0]
@@ -22,7 +22,7 @@ class PathFinding:
                 cells_to_visit.remove(cell)
                 continue
 
-            next_possible_cells = game.determine_next_possible_move(board, cell[0], cell[1])
+            next_possible_cells = game.determine_next_possible_moves(board, cell[0], cell[1])
 
             if next_possible_cells.__len__() > 0:
 

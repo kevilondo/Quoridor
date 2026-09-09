@@ -1,12 +1,17 @@
-from board import Board
 from constants import MAX_WALLS, PLAYER_1, PLAYER_2, BOARD_SIZE
+from player import Player
+from typing import TYPE_CHECKING
+from ai import AI
+
+if TYPE_CHECKING:
+    from board import Board
 
 class Game:
     def __init__(self):
         self.possible_moves_highlighted = False
     
-        self.player1 = {"pos": (8, 4), "color": "blue", "walls": MAX_WALLS}
-        self.player2 = {"pos": (0, 4), "color": "red", "walls": MAX_WALLS}
+        self.player1 = Player((8, 4), "blue")
+        self.player2 = Player((0, 4), "red", True)
     
         self.turn = PLAYER_1
     
@@ -16,6 +21,7 @@ class Game:
         self.walls_built = []
     
         self.possible_moves_for_turn = []
+        self.ai_player = PLAYER_1 if self.player1.ai_controlled else PLAYER_2
 
 #Since we cannot draw a wall on the edge of the board, we need to sanitize the cells to block if they are on the edge of the board and block the next cell inwards instead
     def sanitize_cells_to_block(self):
@@ -39,9 +45,9 @@ class Game:
 
     def reduce_walls(self):
         if self.turn == PLAYER_1:
-            self.player1["walls"] -= 1
+            self.player1.walls -= 1
         else:
-            self.player2["walls"] -= 2
+            self.player2.walls -= 2
 
     def can_build_wall(self):
         player = self.player1
@@ -49,7 +55,7 @@ class Game:
         if self.turn == PLAYER_2:
             player = self.player2
 
-        return player["walls"] > 0
+        return player.walls > 0
 
     def determine_next_possible_wall_placement(self, board, clicked_cell_position):
         possible_wall_placements = []
@@ -70,7 +76,7 @@ class Game:
 
         return possible_wall_placements
 
-    def determine_next_possible_move(self, board, row, col):
+    def determine_next_possible_moves(self, board, row, col):
         possible_moves = []
 
         up = self.next_possible_cell_by_direction(board, row, col, "up")
@@ -110,9 +116,9 @@ class Game:
             better_cell = (row, col + 2)
 
         opponent = self.get_opponent()
-        if opponent["pos"] == target_direction:
+        if opponent.pos == target_direction:
             next_move = better_cell
-            if board.is_within_bounds(next_move) and not board.is_blocked_by_wall(opponent["pos"], next_move):
+            if board.is_within_bounds(next_move) and not board.is_blocked_by_wall(opponent.pos, next_move):
                 return next_move
             else:
                 return None
@@ -139,4 +145,10 @@ class Game:
             return self.player2
         else:
             return self.player1
+
+    def trigger_ai(self, board: "Board"):
+        player = self.get_player_by_turn()
+        if player.ai_controlled:
+            ai = AI(board, player)
+            ai.make_move()
     
