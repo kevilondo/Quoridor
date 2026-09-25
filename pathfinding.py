@@ -39,4 +39,20 @@ class PathFinding:
 
     def is_exit_possible_for_player_2(self, board: "Board"):
             return self.is_exit_possible(board, board.game.player2)
-        
+
+    def distance_from_position_to_goal(self, board: "Board", position, player):
+        game = board.game
+        visited = [position]
+        cells_to_visit = [(position, 0)]
+
+        while cells_to_visit.__len__() > 0:
+            cell, distance = cells_to_visit.pop(0)
+            if board.is_winning_row(player, cell):
+                return distance
+
+            neighbors = game.determine_next_possible_moves(board, cell[0], cell[1])
+            for neighbor in neighbors:
+                if neighbor not in visited:
+                    visited.append(neighbor)
+                    cells_to_visit.append((neighbor, distance + 1))
+        return -1

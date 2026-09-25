@@ -2,7 +2,6 @@ import tkinter as tk
 from typing import TYPE_CHECKING
 from constants import MARGIN, CELL_SIZE, BOARD_SIZE
 from pathfinding import PathFinding
-from ai import AI
 
 if TYPE_CHECKING:
     from game import Game
@@ -81,15 +80,23 @@ class Board:
             self.game.possible_moves_for_turn = []
             self.game.possible_moves_highlighted = False
 
-            if self.game.player1.pos[0] == 0:
+            if self.is_winning_row(self.game.player1):
                 print("win!")
                 exit()
-            elif self.game.player2.pos[0] == BOARD_SIZE - 1:
+            elif self.is_winning_row(self.game.player2):
                 print("player 2 win!")
                 exit()
 
             self.game.switch_turn()
             self.game.trigger_ai(self)
+
+    def is_winning_row(self, player, position=None):
+        position = position if position is not None else player.pos
+        
+        if (player == self.game.player1 and position[0] == 0) or (player == self.game.player2 and position[0] == BOARD_SIZE - 1):
+            return True
+        
+        return False
 
     def draw_possible_grids(self, possible_moves, tags="possible_moves"):
         for move in possible_moves:
@@ -207,8 +214,10 @@ class Board:
             #this simply means that you can't have one wall cutting through another. like a + shaped block. but you can do a T shaped
             #doesn't matter which wall was created first, horizontal or vertical, we just don't want this shape "+" and wall that extends an existing one like this ---
 
+            is_wall_extending_downward = max(cells_to_block[0][0], cells_to_block[1][0]) > max(wall_point_a[0], wall_point_b[0])
+
             is_wall_extending_or_cutting = (max(wall_point_a, wall_point_b) == min(cells_to_block[0], cells_to_block[1])) or (min(wall_point_a, wall_point_b) == max(cells_to_block[0], cells_to_block[1]))
-            if is_wall_extending_or_cutting:
+            if is_wall_extending_or_cutting and not is_wall_extending_downward:
                 result = True
 
         return result

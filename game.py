@@ -1,4 +1,4 @@
-from constants import MAX_WALLS, PLAYER_1, PLAYER_2, BOARD_SIZE
+from constants import MAX_WALLS, PLAYER_1, PLAYER_2, BOARD_SIZE, BLUE, RED
 from player import Player
 from typing import TYPE_CHECKING
 from ai import AI
@@ -10,8 +10,8 @@ class Game:
     def __init__(self):
         self.possible_moves_highlighted = False
     
-        self.player1 = Player((8, 4), "blue")
-        self.player2 = Player((0, 4), "red", True)
+        self.player1 = Player((8, 4), BLUE)
+        self.player2 = Player((0, 4), RED, True)
     
         self.turn = PLAYER_1
     
@@ -115,7 +115,7 @@ class Game:
             target_direction = (row, col + 1)
             better_cell = (row, col + 2)
 
-        opponent = self.get_opponent()
+        opponent = self.get_opponent_on_this_turn()
         if opponent.pos == target_direction:
             next_move = better_cell
             if board.is_within_bounds(next_move) and not board.is_blocked_by_wall(opponent.pos, next_move):
@@ -140,7 +140,7 @@ class Game:
         else:
             return self.player2
 
-    def get_opponent(self):
+    def get_opponent_on_this_turn(self):
         if self.turn == PLAYER_1:
             return self.player2
         else:
@@ -151,4 +151,15 @@ class Game:
         if player.ai_controlled:
             ai = AI(board, player)
             ai.make_move()
-    
+
+    def get_opposing_player(self, player):
+        if player == self.player1:
+            return self.player2
+        else:
+            return self.player1
+
+    def get_player_by_color(self, color):
+        if self.player1.color == color:
+            return self.player1
+        else:
+            return self.player2
