@@ -9,7 +9,7 @@ class PathFinding:
         visited = []
         cells_to_visit = []
 
-        cells_to_visit = game.determine_next_possible_moves(board, player.pos[0], player.pos[1])
+        cells_to_visit = board.determine_next_possible_moves(player.pos[0], player.pos[1])
         visited.append(player.pos)
 
         while cells_to_visit.__len__() > 0:
@@ -22,7 +22,7 @@ class PathFinding:
                 cells_to_visit.remove(cell)
                 continue
 
-            next_possible_cells = game.determine_next_possible_moves(board, cell[0], cell[1])
+            next_possible_cells = board.determine_next_possible_moves(cell[0], cell[1])
 
             if next_possible_cells.__len__() > 0:
 
@@ -41,7 +41,6 @@ class PathFinding:
             return self.is_exit_possible(board, board.game.player2)
 
     def distance_from_position_to_goal(self, board: "Board", position, player):
-        game = board.game
         visited = [position]
         cells_to_visit = [(position, 0)]
 
@@ -50,7 +49,7 @@ class PathFinding:
             if board.is_winning_row(player, cell):
                 return distance
 
-            neighbors = game.determine_next_possible_moves(board, cell[0], cell[1])
+            neighbors = board.determine_next_possible_moves(cell[0], cell[1])
             for neighbor in neighbors:
                 if neighbor not in visited:
                     visited.append(neighbor)

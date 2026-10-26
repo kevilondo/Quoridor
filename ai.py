@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING
 from pathfinding import PathFinding
 from constants import AI_DEPTH, BEST_SCORE_FOR_AI
-from copy import deepcopy
+import copy
 
 if TYPE_CHECKING:
     from board import Board
@@ -12,12 +12,17 @@ class AI:
         self.board = board
         self.player = player
 
+    def set_wall(self, position):
+        self.board.set_wall(position[0])
+        self.board.set_wall(position[1])
+
     def make_move(self):
         self.board.move_pawn(self.player.pos[0], self.player.pos[1])
         opponent = self.board.game.get_opposing_player(self.player)
         move_to_play = self.minimax(self.player.pos, opponent.pos, AI_DEPTH, True)
 
-        self.board.move_pawn(move_to_play[1][0], move_to_play[1][1])
+        position = move_to_play[1]
+        self.board.move_pawn(position[0], position[1])
 
     def minimax(self, position, opponent_position, depth, is_maximizing_player):
         if self.board.is_winning_row(self.player, position):
@@ -35,7 +40,7 @@ class AI:
             max_eval = float('-inf')
             best_move = None
 
-            for move in self.board.game.determine_next_possible_moves(self.board, position[0], position[1]):
+            for move in self.board.determine_next_possible_moves(position[0], position[1]):
                 evaluation = self.minimax(move, opponent_position, depth - 1, False)[0]
                 
                 if max_eval < evaluation or self.board.is_winning_row(self.player, move):
@@ -46,7 +51,8 @@ class AI:
         else:
             min_eval = float('inf')
             best_move = None
-            for move in self.board.game.determine_next_possible_moves(self.board, opponent_position[0], opponent_position[1]):
+
+            for move in self.board.determine_next_possible_moves(opponent_position[0], opponent_position[1]):
                 evaluation = self.minimax(position, move, depth - 1, True)[0]
                 
                 if min_eval > evaluation or self.board.is_winning_row(opponent, move):

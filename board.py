@@ -1,4 +1,3 @@
-import tkinter as tk
 from typing import TYPE_CHECKING
 from constants import MARGIN, CELL_SIZE, BOARD_SIZE
 from pathfinding import PathFinding
@@ -9,74 +8,34 @@ if TYPE_CHECKING:
 class Board:
     def __init__(self, game: "Game"):
         self.game = game
-        self.root = tk.Tk()
-        self.root.title("Quoridor")
-        self.canvas_size = MARGIN * 2 + CELL_SIZE * BOARD_SIZE
-        self.canvas = tk.Canvas(self.root, width=self.canvas_size, height=self.canvas_size, bg='white')
-
-        self.canvas.bind("<Button-1>", self.on_click)
-        self.canvas.bind("<Control-Button-1>", self.on_right_click)
-
-    def draw_board(self):
-        self.canvas.pack()
-
-        for idx, row in enumerate(range(BOARD_SIZE)):
-            if idx == 0 or idx == BOARD_SIZE - 1:
-                fill_color = "#bfbaba"
-            else:
-                fill_color = "#f0d9b5"
-            for col in range(BOARD_SIZE):
-                x0 = MARGIN + col * CELL_SIZE
-                y0 = MARGIN + row * CELL_SIZE
-                x1 = x0 + CELL_SIZE
-                y1 = y0 + CELL_SIZE
-                self.canvas.create_rectangle(x0, y0, x1, y1, outline='gray', fill=fill_color)
-
-        for player in [self.game.player1, self.game.player2]:
-            self.draw_pawn(player.pos[0], player.pos[1], player.color)
-
-        self.root.mainloop()
-
-    def draw_pawn(self, row = None, col = None, color = "blue"):
-        if col is None or row is None:
-            return
-        
-        x0 = MARGIN + col * CELL_SIZE + CELL_SIZE // 4
-        y0 = MARGIN + row * CELL_SIZE + CELL_SIZE // 4
-        x1 = x0 + CELL_SIZE // 2
-        y1 = y0 + CELL_SIZE // 2
-    
-        self.canvas.create_oval(x0, y0, x1, y1, fill=color, tags="pawn-"+color)
 
     def move_pawn(self, row, col):
 
         if self.game.possible_wall_placement_highlighted:
-            return
+            return False
 
         player = self.game.get_player_by_turn()
 
         if ((row, col) == player.pos):
         
             if self.game.possible_moves_highlighted == True:
-                self.canvas.delete("possible_moves")
                 self.game.possible_moves_highlighted = False
                 self.game.possible_moves_for_turn = []
+                self.game.cells_to_block = []
 
-                return
+                return False
             
-            self.game.possible_moves_for_turn = self.game.determine_next_possible_moves(self, row, col)
-            self.draw_possible_grids(self.game.possible_moves_for_turn)
+            self.game.possible_moves_for_turn = self.determine_next_possible_moves(row, col)
+
             self.game.possible_moves_highlighted = True
             self.game.possible_wall_placement_highlighted = False
             self.game.possible_wall_placements = []
-            self.canvas.delete("possible_wall_placement")
-
+            self.game.cells_to_block = []
     
         if self.game.possible_moves_highlighted == True and (row, col) in self.game.possible_moves_for_turn:
-            self.canvas.delete("pawn-"+player.color)
-            self.draw_pawn(row, col, player.color)
+
             player.pos = (row, col)
-            self.canvas.delete("possible_moves")
+
             self.game.possible_moves_for_turn = []
             self.game.possible_moves_highlighted = False
 
@@ -90,6 +49,10 @@ class Board:
             self.game.switch_turn()
             self.game.trigger_ai(self)
 
+            return True
+
+        return False
+
     def is_winning_row(self, player, position=None):
         position = position if position is not None else player.pos
         
@@ -98,72 +61,21 @@ class Board:
         
         return False
 
-    def draw_possible_grids(self, possible_moves, tags="possible_moves"):
-        for move in possible_moves:
-            row, col = move[0], move[1]
-            x0 = MARGIN + col * CELL_SIZE
-            y0 = MARGIN + row * CELL_SIZE
-            x1 = x0 + CELL_SIZE
-            y1 = y0 + CELL_SIZE
-
-            self.canvas.create_rectangle(x0, y0, x1, y1, outline='green', width=3, tags=tags)
-
-    def draw_wall(self, walls_built):
-    # if row is the same, then it thickens the top border of both cells,
-    # if col is the same, then it thickens the right border of both cells
-        for wall in walls_built:
-            if wall[0][1] == wall[1][1]:
-                for cell in wall:
-                    row, col = cell[0], cell[1]
-                    # #if we are not at the end of the board (the. last column on the right), draw the wall on the right side, else draw it on the left
-
-                    x0 = (MARGIN * 2 + 15) + col * CELL_SIZE
-                    y0 = MARGIN + row * CELL_SIZE
-                    x1 = x0 + CELL_SIZE / 5
-                    y1 = y0 + CELL_SIZE
-
-                    self.canvas.create_rectangle(x0, y0, x1, y1, outline='black', fill='brown', tags="wall")
-            else:
-                for cell in wall:
-                    row, col = cell[0], cell[1]
-                    if row == 0:
-                        row = 1
-
-                    x0 = MARGIN + col * CELL_SIZE
-                    y0 = MARGIN + row * CELL_SIZE
-                    x1 = x0 + CELL_SIZE
-                    y1 = y0 + CELL_SIZE / 5
-
-                    self.canvas.create_rectangle(x0, y0, x1, y1, outline='black', fill='brown', tags="wall")
-
-    def on_click(self, event):
-        col = (event.x - MARGIN) // CELL_SIZE
-        row = (event.y - MARGIN) // CELL_SIZE
-
-        self.move_pawn(row, col)
-
-    def on_right_click(self, event):
-        col = (event.x - MARGIN) // CELL_SIZE
-        row = (event.y - MARGIN) // CELL_SIZE
-
-        self.set_wall((row, col))
-
     def set_wall(self, clicked_cell_position):
 
         if not self.game.can_build_wall():
             print("YOU'RE OUT OF WALLS!")
-            return
+            return []
 
-        #clicked_cell_position != player_1.pos and clicked_cell_position != player_2.pos
         if self.is_within_bounds(clicked_cell_position):
 
             if self.game.possible_wall_placement_highlighted == True:
                 if clicked_cell_position not in self.game.possible_wall_placements:
-                    self.canvas.delete("possible_wall_placement")
+
                     self.game.possible_wall_placement_highlighted = False
                     self.game.cells_to_block = []
 
-                    return
+                    return []
                 else:
                     self.game.cells_to_block.append(clicked_cell_position)
                     self.game.cells_to_block = self.game.sanitize_cells_to_block()
@@ -171,9 +83,8 @@ class Board:
                     if self.is_wall_already_built(self.game.cells_to_block):
                         print("Wall already built here")
 
-                        return
+                        return []
                     
-                    self.canvas.delete("possible_wall_placement")
                     self.game.possible_wall_placement_highlighted = False
                     self.game.possible_wall_placements = []
 
@@ -184,20 +95,21 @@ class Board:
                         self.game.walls_built.pop()
                         self.game.cells_to_block = []
                         print("ILLEGAL WALL!!!!!")
-                        return
+                        return []
 
-                    self.draw_wall([self.game.cells_to_block])
+                    cells_to_block = self.game.cells_to_block
                     self.game.reduce_walls()
                     self.game.cells_to_block = []
                     self.game.switch_turn()
                     self.game.trigger_ai(self)
 
-                    return
+                    return cells_to_block
 
-            self.game.possible_wall_placements = self.game.determine_next_possible_wall_placement(self, clicked_cell_position)
+            self.game.possible_wall_placements = self.determine_next_possible_wall_placement(clicked_cell_position)
             self.game.cells_to_block.append(clicked_cell_position)
-            self.draw_possible_grids(self.game.possible_wall_placements, tags="possible_wall_placement")
             self.game.possible_wall_placement_highlighted = True
+
+            return []
 
     def is_position_vertical(self, cells):
         return cells[0][1] == cells[1][1]
@@ -211,14 +123,27 @@ class Board:
         for wall in self.game.walls_built:
             wall_point_a, wall_point_b = wall[0], wall[1]
 
-            #this simply means that you can't have one wall cutting through another. like a + shaped block. but you can do a T shaped
-            #doesn't matter which wall was created first, horizontal or vertical, we just don't want this shape "+" and wall that extends an existing one like this ---
+            sorted_wall = sorted([wall_point_a, wall_point_b])
+            sorted_cells_to_block = sorted(cells_to_block)
 
-            is_wall_extending_downward = max(cells_to_block[0][0], cells_to_block[1][0]) > max(wall_point_a[0], wall_point_b[0])
-
-            is_wall_extending_or_cutting = (max(wall_point_a, wall_point_b) == min(cells_to_block[0], cells_to_block[1])) or (min(wall_point_a, wall_point_b) == max(cells_to_block[0], cells_to_block[1]))
-            if is_wall_extending_or_cutting and not is_wall_extending_downward:
+            if (sorted_wall == sorted_cells_to_block):
                 result = True
+                break
+
+            if (self.is_position_vertical(sorted_wall) and self.is_position_vertical(sorted_cells_to_block)) or (self.is_position_horizontal(sorted_wall) and self.is_position_horizontal(sorted_cells_to_block)):
+                if max(sorted_cells_to_block) == min(sorted_wall) or min(sorted_cells_to_block) == max(sorted_wall):
+                    result = True
+                    break
+
+            if self.is_position_horizontal(sorted_wall) and self.is_position_vertical(sorted_cells_to_block):
+                if max(sorted_cells_to_block) == min(sorted_wall):
+                    result = True
+                    break
+
+            if self.is_position_vertical(sorted_wall) and self.is_position_horizontal(sorted_cells_to_block):
+                if min(sorted_cells_to_block) == max(sorted_wall):
+                    result = True
+                    break
 
         return result
 
@@ -272,4 +197,93 @@ class Board:
             return None
 
         return self.game.walls_built[index]
+
+    def get_all_grids(self):
+        grids = []
+
+        for i in range(0, BOARD_SIZE - 1):
+            for j in range (0, BOARD_SIZE - 1):
+                grids.append((i, j))
+
+        return grids
+
+    def determine_next_possible_wall_placement(self, clicked_cell_position):
+        possible_wall_placements = []
+        row, col = clicked_cell_position
+        up = (row - 1, col)
+        down = (row + 1, col)
+        left = (row, col - 1)
+        right = (row, col + 1)
+
+        if self.is_within_bounds(up):
+            possible_wall_placements.append(up)
+        if self.is_within_bounds(down):
+            possible_wall_placements.append(down)
+        if self.is_within_bounds(left):
+            possible_wall_placements.append(left)
+        if self.is_within_bounds(right):
+            possible_wall_placements.append(right)
+
+        return possible_wall_placements
+
+    def determine_next_possible_moves(self, row, col):
+        target_positions = [
+            (row - 1, col),
+            (row + 1, col),
+            (row, col - 1),
+            (row, col + 1)
+        ]
+
+        possible_moves = []
+
+        for position in target_positions:
+            if not self.is_within_bounds(position):
+                continue
+
+            if self.is_blocked_by_wall((row, col), position):
+                continue
+
+            if self.game.get_opponent_on_this_turn().pos != position:
+                possible_moves.append(position)
+            else:
+                is_up = position[0] < row
+                is_down = position[0] > row
+                is_left = position[1] < col
+                is_right = position[1] > col
+                alternative_positions = []
+                
+                if is_up:
+                    pos = (row - 2, col)
+                    if self.is_within_bounds(pos) and not self.is_blocked_by_wall(position, pos):
+                        possible_moves.append(pos)
+                        continue
+                    else:
+                        alternative_positions = [(row - 1, col - 1), (row - 1, col + 1)]
+                elif is_down:
+                    pos = (row + 2, col)
+                    if self.is_within_bounds(pos) and not self.is_blocked_by_wall(position, pos):
+                        possible_moves.append(pos)
+                        continue
+                    else:
+                        alternative_positions = [(row + 1, col - 1), (row + 1, col + 1)]
+                elif is_left:
+                    pos = (row, col - 2)
+                    if self.is_within_bounds(pos) and not self.is_blocked_by_wall(position, pos):
+                        possible_moves.append(pos)
+                        continue
+                    else:
+                        alternative_positions = [(row - 1, col - 1), (row + 1, col - 1)]
+                elif is_right:
+                    pos = (row, col + 2)
+                    if self.is_within_bounds(pos) and not self.is_blocked_by_wall(position, pos):
+                        possible_moves.append(pos)
+                        continue
+                    else:
+                        alternative_positions = [(row - 1, col + 1), (row + 1, col + 1)]
+
+                for alternative_position in alternative_positions:
+                    if self.is_within_bounds(alternative_position) and not self.is_blocked_by_wall(position, alternative_position):
+                        possible_moves.append(alternative_position)
+
+        return possible_moves
     
