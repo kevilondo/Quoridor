@@ -92,3 +92,15 @@ class Game:
             return self.player1
         else:
             return self.player2
+    
+    def clone(self):
+        new_game = Game()
+        new_game.player1 = self.player1
+        new_game.player2 = self.player2
+        new_game.turn = self.turn
+        new_game.cells_to_block = self.cells_to_block.copy()
+        new_game.possible_wall_placement_highlighted = self.possible_wall_placement_highlighted
+        new_game.possible_wall_placements = self.possible_wall_placements.copy()
+        new_game.walls_built = self.walls_built.copy()
+        new_game.possible_moves_for_turn = self.possible_moves_for_turn.copy()
+        return new_game

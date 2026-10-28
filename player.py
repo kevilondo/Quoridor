@@ -19,8 +19,9 @@ class Player:
     def pos(self, value):
         self._pos = value
 
-        callback = self.listeners["pos"]
-        callback(self)
+        if self.listeners.get("pos"):
+            callback = self.listeners["pos"]
+            callback(self)
 
     @property
     def walls(self):
@@ -30,6 +31,7 @@ class Player:
     def walls(self, value):
         self._walls = value
 
-        callback = self.listeners["walls"]
-        callback()
+        if self.listeners.get("walls"):
+            callback = self.listeners["walls"]
+            callback()
     

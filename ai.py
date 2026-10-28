@@ -1,10 +1,10 @@
 from typing import TYPE_CHECKING
 from pathfinding import PathFinding
-from constants import AI_DEPTH, BEST_SCORE_FOR_AI
-import copy
+from constants import AI_DEPTH, BEST_SCORE_FOR_AI, BOARD_SIZE
+from board import Board
+from player import Player
 
 if TYPE_CHECKING:
-    from board import Board
     from player import Player
 
 class AI:
@@ -19,7 +19,17 @@ class AI:
     def make_move(self):
         self.board.move_pawn(self.player.pos[0], self.player.pos[1])
         opponent = self.board.game.get_opposing_player(self.player)
+
         move_to_play = self.minimax(self.player.pos, opponent.pos, AI_DEPTH, True)
+        move_score = move_to_play[0]
+        wall_to_place_and_score = self.wall_placement_decision()
+        wall_score = wall_to_place_and_score[0]
+        wall_to_place = wall_to_place_and_score[1]
+
+        if wall_score > move_score:
+            self.set_wall(wall_to_place)
+
+            return
 
         position = move_to_play[1]
         self.board.move_pawn(position[0], position[1])
@@ -61,6 +71,44 @@ class AI:
 
             return min_eval, best_move
 
+    def wall_placement_decision(self):
+        opponent = self.board.game.get_opposing_player(self.player)
+        opponent_distance_to_goal_and_path = PathFinding().path_and_distance_from_goal(self.board, opponent.pos, opponent)
+        opponent_distance_to_goal = opponent_distance_to_goal_and_path[0]
+        opponent_path = opponent_distance_to_goal_and_path[1]
+
+        best_wall_placement = None
+        best_score = float('-inf')
+
+        for cell in opponent_path:
+            possible_walls = self.board.determine_next_possible_wall_placement(cell)
+
+            for wall_position in possible_walls:
+                temp_game = self.board.game.clone()
+                temp_game.player1 = Player(self.board.game.player1.pos, self.board.game.player1.color, self.board.game.player1.ai_controlled)
+                temp_game.player2 = Player(self.board.game.player2.pos, self.board.game.player2.color, self.board.game.player2.ai_controlled)
+                temp_game.player1.walls = self.board.game.player1.walls
+                temp_game.player2.walls = self.board.game.player2.walls
+                temp_board = Board(temp_game)
+                temp_board.set_wall(cell)
+                cells_to_block = temp_board.set_wall(wall_position)
+
+                if cells_to_block.__len__() == 0:
+                    continue
+
+                ai_player = temp_game.player1 if self.player.ai_controlled == self.board.game.player1.ai_controlled else temp_game.player2
+
+                if not PathFinding().is_exit_possible(temp_board, ai_player) or not PathFinding().is_exit_possible(temp_board, temp_game.get_opposing_player(ai_player)):
+                    continue
+
+                score = self.evaluate_wall(temp_board)
+
+                if score > best_score and opponent_distance_to_goal < (BOARD_SIZE // 2):
+                    best_score = score
+                    best_wall_placement = cells_to_block
+
+        return best_score, best_wall_placement
+
     def evaluate_position(self, position, opponent_position):
 
         opponent = self.board.game.get_opposing_player(self.player)
@@ -77,4 +125,14 @@ class AI:
         distance_opponent_to_goal = path.distance_from_position_to_goal(self.board, opponent_position, opponent)
 
         return (distance_opponent_to_goal - distance_to_goal)
-        
+
+    def evaluate_wall(self, board):
+        opponent = board.game.get_opposing_player(self.player)
+        ai_player = board.game.player1 if self.player.ai_controlled == board.game.player1.ai_controlled else board.game.player2
+
+        path = PathFinding()
+
+        distance_to_goal = path.distance_from_position_to_goal(board, ai_player.pos, ai_player)
+        distance_opponent_to_goal = path.distance_from_position_to_goal(board, opponent.pos, opponent)
+
+        return (distance_opponent_to_goal - distance_to_goal) + ((opponent.walls - ai_player.walls) // 2)

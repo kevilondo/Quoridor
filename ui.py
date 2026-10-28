@@ -98,7 +98,6 @@ class UI:
             row = (event.y - MARGIN) // CELL_SIZE
 
             can_move_pawn = self.board.move_pawn(row, col)
-            print("Can move pawn: " + str(can_move_pawn))
 
             if self.game.possible_moves_for_turn.__len__() > 0:
                 self.draw_possible_grids(self.game.possible_moves_for_turn)
