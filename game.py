@@ -10,8 +10,8 @@ class Game:
     def __init__(self):
         self.possible_moves_highlighted = False
     
-        self.player1 = Player((8, 4), BLUE)
-        self.player2 = Player((0, 4), RED, True)
+        self.player1 = Player((8, 4), BLUE, True)
+        self.player2 = Player((0, 4), RED)
     
         self.turn = PLAYER_1
     
@@ -47,7 +47,7 @@ class Game:
         if self.turn == PLAYER_1:
             self.player1.walls -= 1
         else:
-            self.player2.walls -= 2
+            self.player2.walls -= 1
 
     def can_build_wall(self):
         player = self.player1
@@ -82,7 +82,7 @@ class Game:
             ai.make_move()
 
     def get_opposing_player(self, player):
-        if player == self.player1:
+        if player.color == self.player1.color:
             return self.player2
         else:
             return self.player1

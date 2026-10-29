@@ -3,6 +3,7 @@ from pathfinding import PathFinding
 from constants import AI_DEPTH, BEST_SCORE_FOR_AI, BOARD_SIZE
 from board import Board
 from player import Player
+from copy import deepcopy
 
 if TYPE_CHECKING:
     from player import Player
@@ -96,7 +97,7 @@ class AI:
                 if cells_to_block.__len__() == 0:
                     continue
 
-                ai_player = temp_game.player1 if self.player.ai_controlled == self.board.game.player1.ai_controlled else temp_game.player2
+                ai_player = temp_game.player1 if self.board.game.player1.ai_controlled == True else temp_game.player2
 
                 if not PathFinding().is_exit_possible(temp_board, ai_player) or not PathFinding().is_exit_possible(temp_board, temp_game.get_opposing_player(ai_player)):
                     continue
@@ -128,7 +129,7 @@ class AI:
 
     def evaluate_wall(self, board):
         opponent = board.game.get_opposing_player(self.player)
-        ai_player = board.game.player1 if self.player.ai_controlled == board.game.player1.ai_controlled else board.game.player2
+        ai_player = board.game.player1 if board.game.player1.ai_controlled == True else board.game.player2
 
         path = PathFinding()
 
