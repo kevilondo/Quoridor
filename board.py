@@ -116,14 +116,52 @@ class Board:
     def is_position_horizontal(self, cells):
         return cells[0][0] == cells[1][0]
 
+    #This looks weird I know, but I had to get creative to prevent having walls like this --|--
+    #Because 2 pairs of blocked cell technically leave a gap in the middle. [3,4 3,5] [3,6 3,7] technically leaves a gap for 3,5, 4,5 which isn't allowed in Quoridor
+    def wall_is_cutting_through_neighboring_walls(self, cells_to_block):
+        neighboring_walls = []
+
+        if self.is_position_vertical(cells_to_block):
+            tip_of_new_wall = max(cells_to_block)
+            neighboring_walls = [
+                [(tip_of_new_wall[0], tip_of_new_wall[1] - 1),
+                tip_of_new_wall],
+                [(tip_of_new_wall[0], tip_of_new_wall[1] + 1),
+                (tip_of_new_wall[0], tip_of_new_wall[1] + 2)]
+            ]
+        else:
+            tip_of_new_wall = min(cells_to_block)
+            neighboring_walls = [
+                [(tip_of_new_wall[0] - 2, tip_of_new_wall[1]), (tip_of_new_wall[0] - 1, tip_of_new_wall[1])],
+                [tip_of_new_wall, (tip_of_new_wall[0] + 1, tip_of_new_wall[1])]
+            ]
+
+        if neighboring_walls.__len__() == 0:
+            return False
+
+        wall_match = 0
+
+        for wall in self.game.walls_built:
+            if sorted(wall) in neighboring_walls:
+                wall_match += 1
+
+            if wall_match == 2:
+                return True
+
+        return False
+
     def is_wall_already_built(self, cells_to_block):
         result = False
+
+        sorted_cells_to_block = sorted(cells_to_block)
+
+        if self.wall_is_cutting_through_neighboring_walls(cells_to_block):
+            return True
 
         for wall in self.game.walls_built:
             wall_point_a, wall_point_b = wall[0], wall[1]
 
             sorted_wall = sorted([wall_point_a, wall_point_b])
-            sorted_cells_to_block = sorted(cells_to_block)
 
             if (sorted_wall == sorted_cells_to_block):
                 result = True
