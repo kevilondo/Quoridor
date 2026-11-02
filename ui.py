@@ -112,7 +112,6 @@ class UI:
                 self.canvas.delete("possible_wall_placement")
     
     def on_right_click(self, event):
-        # print("Right click detected: " + str(self.game.possible_moves_highlighted))
         self.game.possible_moves_highlighted = False
         self.canvas.delete("possible_moves")
 

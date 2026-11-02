@@ -10,7 +10,6 @@ class Board:
         self.game = game
 
     def move_pawn(self, row, col):
-
         if self.game.possible_wall_placement_highlighted:
             return False
 
@@ -109,7 +108,7 @@ class Board:
             self.game.cells_to_block.append(clicked_cell_position)
             self.game.possible_wall_placement_highlighted = True
 
-            return []
+        return []
 
     def is_position_vertical(self, cells):
         return cells[0][1] == cells[1][1]
