@@ -155,8 +155,9 @@ class Board:
 
         sorted_cells_to_block = sorted(cells_to_block)
 
-        if self.wall_is_cutting_through_neighboring_walls(cells_to_block):
-            return True
+        ##When playing in crazygames.com, I uncomment this because their quoridor version allows this
+        # if self.wall_is_cutting_through_neighboring_walls(cells_to_block):
+        #     return True
 
         for wall in self.game.walls_built:
             wall_point_a, wall_point_b = wall[0], wall[1]

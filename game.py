@@ -10,10 +10,10 @@ class Game:
     def __init__(self):
         self.possible_moves_highlighted = False
     
-        self.player1 = Player((8, 4), BLUE, True)
-        self.player2 = Player((0, 4), RED)
+        self.player1 = Player((8, 4), BLUE)
+        self.player2 = Player((0, 4), RED, True)
     
-        self.turn = PLAYER_2
+        self.turn = PLAYER_1
     
         self.cells_to_block = []
         self.possible_wall_placement_highlighted = False
